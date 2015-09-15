@@ -25,5 +25,10 @@ setup(
         'console_scripts': [
             'cmadison = cmadison.cmadison:main',
             ]
-        }
+        },
+    classifiers=[
+        "Development Status :: 3 - Alpha",
+        "Environment :: Console",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)"
+    ]
 )
