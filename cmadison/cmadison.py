@@ -10,15 +10,15 @@
 #     cloud archives.
 #
 
+from __future__ import print_function
+
 from lxml import etree
 import argparse
-import collections
 import gzip
 import logging as log
 import os.path
 import shutil
 import subprocess
-import sys
 import tempfile
 import urllib2
 
@@ -30,6 +30,7 @@ UCA_DEB_REPO_URL = "http://ubuntu-cloud.archive.canonical.com/ubuntu/dists"
 # In the future, it'd be better to have these cached and know - but
 # I'll /assume/ bandwidth is decent enough its not a super big issue.
 working_dir = tempfile.mkdtemp()
+
 
 def get_files_in_remote_url(relative_path=""):
     """
@@ -60,6 +61,7 @@ def get_files_in_remote_url(relative_path=""):
 
     return files
 
+
 def get_available_dists():
     """
     Returns the list of distributions which are available.
@@ -75,6 +77,7 @@ def get_available_dists():
         dists.append(folder)
 
     return dists
+
 
 def get_openstack_releases(dist):
     """
@@ -104,7 +107,7 @@ class Sources(object):
         self.os_release = os_release
         self.fname = os.path.join(working_dir, fname)
 
-        self.download()        
+        self.download()
 
     def download(self):
         """
@@ -192,7 +195,8 @@ def print_table(table):
     for row in table:
         out = " | ".join("{:{}}".format(x, widths[i])
                          for i, x in enumerate(row))
-        print " " + out
+        print(" " + out)
+
 
 def do_rmadison_search(search_for, urls=None, print_source=False):
     """
@@ -209,7 +213,7 @@ def do_rmadison_search(search_for, urls=None, print_source=False):
         print(output)
     except Exception as e:
         log.error("Error querying rmadison: %s", str(e))
- 
+
 
 def do_cloudarchive_search(package, print_source=False):
     """
@@ -248,14 +252,14 @@ def do_cloudarchive_search(package, print_source=False):
     print_table(sorted(matches, key=lambda row: row[0]))
 
 
-if __name__ == '__main__':
+def main():
     desc = """Provides Ubuntu cloud-archive support on top of the rmadison
     utilities and packages. Though it does not provide 1:1 functionality
     with rmadison, it provides 'good enough' support in order to determine
     which packages live in the cloud-archive.
     """
     parser = argparse.ArgumentParser(description=desc)
-    
+
     parser.add_argument('-u', default='cloud-archive', dest='urls',
                         help=('use URL for the query. This provides some '
                               'parity to the rmadison tool, but adds in '
@@ -280,3 +284,5 @@ if __name__ == '__main__':
     finally:
         shutil.rmtree(working_dir)
 
+if __name__ == '__main__':
+    main()
