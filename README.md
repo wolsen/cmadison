@@ -8,6 +8,7 @@ addition to the traditional sources (e.g. debian, ubuntu, etc).
 
 1. Query the Ubuntu cloud-archive for package versions:
 
+```
 wolsen@chaps:~/work/cmadison/cmadison$ ./cmadison.py nova
  nova | 1:2014.2.3-0ubuntu1.2~cloud0 | juno     | source
  nova | 1:2015.1.1-0ubuntu1~cloud2   | kilo     | source
@@ -16,9 +17,11 @@ wolsen@chaps:~/work/cmadison/cmadison$ ./cmadison.py nova
  nova | 1:2013.1.5-0ubuntu1~cloud0   | grizzly  | source
  nova | 1:2013.2.3-0ubuntu1~cloud0   | havana   | source
  nova | 1:2014.1.5-0ubuntu1.2~cloud0 | icehouse | source
+```
 
 2. Query multiple sources:
 
+```
 wolsen@chaps:~/work/cmadison/cmadison$ ./cmadison.py -u cloud-archive,ubuntu,debian nova
 cloud-archive:
  nova | 1:2014.2.3-0ubuntu1.2~cloud0 | juno     | source
@@ -46,5 +49,5 @@ debian:
  nova | 2015.1.0-8        | stretch          | source
  nova | 2015.1.0-8        | sid              | source
  nova | 1:12.0.0~b3-1     | experimental     | source
-
+```
 
