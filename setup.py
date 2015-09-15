@@ -9,7 +9,7 @@ dependencies = ["lxml", ]
 
 setup(
     name="cmadison",
-    version="0.0.1",
+    version="0.0.2",
     author="Billy Olsen",
     author_email="billy.olsen@gmail.com",
     description=("A wrapper for rmadison including basic support for "
