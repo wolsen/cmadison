@@ -17,7 +17,8 @@ setup(
     version="0.0.1",
     author="Billy Olsen",
     author_email="billy.olsen@canonical.com",
-    description="",
+    description=("A wrapper for rmadison including basic support for "
+                 "Ubuntu Cloud Archive"),
     install_requires=dependencies,
     packages=find_packages(),
     long_description=read('README.md'),
