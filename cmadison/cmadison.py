@@ -26,6 +26,9 @@ import urllib2
 # Defines teh default ubuntu cloud-archive repository URL.
 UCA_DEB_REPO_URL = "http://ubuntu-cloud.archive.canonical.com/ubuntu/dists"
 
+# Which releases are no longer supported
+UNSUPPORTED_RELEASES = ['folsom', 'grizzly', 'havana']
+
 # This is where the Sources.gz files will be downloaded to.
 # In the future, it'd be better to have these cached and know - but
 # I'll /assume/ bandwidth is decent enough its not a super big issue.
@@ -69,11 +72,6 @@ def get_available_dists():
     # Each folder maps to a dist
     dists = []
     for folder in get_files_in_remote_url():
-        # Skip -proposed packages for now as well. This should probably be
-        # a command line script.
-        if folder.endswith('-proposed'):
-            log.debug('Skipping folder %s' % folder)
-            continue
         dists.append(folder)
 
     return dists
@@ -88,6 +86,8 @@ def get_openstack_releases(dist):
     """
     os_releases = get_files_in_remote_url(dist)
     log.debug("Found OpenStack releases for dist %s: %s", dist, os_releases)
+    os_releases = [x for x in os_releases if x not in UNSUPPORTED_RELEASES]
+
     return os_releases
 
 
@@ -240,6 +240,8 @@ def do_cloudarchive_search(package, print_source=False):
                         # Not a match, continue
                         continue
 
+                    if dist.find('-proposed') > 0:
+                        os_release = '%s-proposed' % os_release
                     match = [pkg,
                              src.version,
                              os_release,
@@ -249,7 +251,7 @@ def do_cloudarchive_search(package, print_source=False):
     if print_source:
         print("cloud-archive:")
 
-    print_table(sorted(matches, key=lambda row: row[0]))
+    print_table(sorted(matches, key=lambda row: row[0] + row[2]))
 
 
 def main():
