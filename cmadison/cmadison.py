@@ -107,7 +107,7 @@ class Sources(object):
         self.os_release = os_release
         self.fname = os.path.join(working_dir, fname)
 
-        self.download()
+        self.ready = self.download()
 
     def download(self):
         """
@@ -118,9 +118,14 @@ class Sources(object):
                 'dist': self.dist,
                 'os_release': self.os_release})
 
-        content = urllib2.urlopen(url)
-        with open(self.fname, 'wb+') as f:
-            f.write(content.read())
+        try:
+            content = urllib2.urlopen(url)
+            with open(self.fname, 'wb+') as f:
+                f.write(content.read())
+            return True
+        except urllib2.HTTPError:
+            log.info("Could not download source for %(dist)s/%(os_release)s" % {'dist': self.dist, 'os_release': self.os_release})
+            return False
 
     def get_sources(self):
         """
@@ -130,14 +135,15 @@ class Sources(object):
         :param filename: the file to read the source packages from.
         """
         lines = []
-        for line in gzip.open(self.fname):
-            # Empty line is the end of the source package stanza
-            if line.strip() == '':
-                src = Source.parse(''.join(lines))
-                lines = []
-                yield src
-            else:
-                lines.append(line)
+        if self.ready:
+            for line in gzip.open(self.fname):
+                # Empty line is the end of the source package stanza
+                if line.strip() == '':
+                    src = Source.parse(''.join(lines))
+                    lines = []
+                    yield src
+                else:
+                    lines.append(line)
 
 
 class Source(dict):
