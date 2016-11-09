@@ -19,8 +19,15 @@ import logging as log
 import os.path
 import shutil
 import subprocess
+import sys
 import tempfile
-import urllib2
+try:
+    # python2
+    from urllib2 import urlopen, HTTPError
+except ImportError:
+    # python3
+    from urllib.request import urlopen
+    from urllib.error import HTTPError
 
 
 # Defines teh default ubuntu cloud-archive repository URL.
@@ -46,7 +53,7 @@ def get_files_in_remote_url(relative_path=""):
     :return: list of files or folders found in the remote url.
     """
     url = "%s/%s" % (UCA_DEB_REPO_URL, relative_path)
-    content = urllib2.urlopen(url)
+    content = urlopen(url)
     root = etree.parse(content, etree.HTMLParser())
 
     # Content available here should be directory listing, which is presented
@@ -119,11 +126,11 @@ class Sources(object):
                 'os_release': self.os_release})
 
         try:
-            content = urllib2.urlopen(url)
+            content = urlopen(url)
             with open(self.fname, 'wb+') as f:
                 f.write(content.read())
             return True
-        except urllib2.HTTPError:
+        except HTTPError:
             log.info("Could not download source for %(dist)s/%(os_release)s" % {'dist': self.dist, 'os_release': self.os_release})
             return False
 
@@ -135,15 +142,22 @@ class Sources(object):
         :param filename: the file to read the source packages from.
         """
         lines = []
-        if self.ready:
-            for line in gzip.open(self.fname):
-                # Empty line is the end of the source package stanza
-                if line.strip() == '':
-                    src = Source.parse(''.join(lines))
-                    lines = []
-                    yield src
-                else:
-                    lines.append(line)
+        if not self.ready:
+            return
+
+        for line in gzip.open(self.fname):
+            # In python3 the data here is read as a byte string, so coerce
+            # it into something we can deal with properly
+            if type(line) == bytes:
+                line = str(line, 'utf-8')
+
+            # Empty line is the end of the source package stanza
+            if line.strip() == '':
+                src = Source.parse(''.join(lines))
+                lines = []
+                yield src
+            else:
+                lines.append(line)
 
 
 class Source(dict):
