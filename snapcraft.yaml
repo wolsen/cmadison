@@ -1,0 +1,25 @@
+name: cmadison 
+version: '0.0.3'
+summary: Tool providing rmadison type capabilities for the Ubuntu Cloud Archive
+description: |
+  rmadison is a great tool for showing which versions are available in the
+  Ubuntu and Debian archives, but doesn't work for the Ubuntu Cloud Archive.
+  cmadison allows one to query the versions of software in the Ubuntu Cloud
+  Archives as well as the Ubuntu and Debian archives.
+
+grade: stable
+confinement: strict
+
+apps:
+  cmadison:
+    command: bin/cmadison
+    plugs:
+      - network-bind
+
+parts:
+  cmadison:
+    plugin: python
+    source: .
+    #python-version: python2
+    requirements: requirements.txt
+
