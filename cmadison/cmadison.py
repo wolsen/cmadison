@@ -146,10 +146,9 @@ class Sources(object):
             return
 
         for line in gzip.open(self.fname):
-            # In python3 the data here is read as a byte string, so coerce
-            # it into something we can deal with properly
+            # Decode the bytes object into a string
             if type(line) == bytes:
-                line = str(line, 'utf-8')
+                line = line.decode('utf-8')
 
             # Empty line is the end of the source package stanza
             if line.strip() == '':
