@@ -259,11 +259,12 @@ def do_cloudarchive_search(package, print_source=False):
                         # Not a match, continue
                         continue
 
+                    rname = os_release
                     if dist.find('-proposed') > 0:
-                        os_release = '%s-proposed' % os_release
+                        rname = '%s-proposed' % os_release
                     match = [pkg,
                              src.version,
-                             os_release,
+                             rname,
                              mtype]
                     matches.append(match)
 
