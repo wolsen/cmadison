@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from setuptools import setup, find_packages
+from subprocess import check_output
 
 
 def get_dependencies():
@@ -14,12 +15,12 @@ def get_dependencies():
 
 def get_version():
     """Returns the version as a relative commit to a tag and version"""
-    pass
+    return check_output(['git', 'describe', '--tags']).decode('utf-8')
 
 
 setup(
     name="cmadison",
-    version="0.0.3",
+    version=get_version(),
     author="Billy Olsen",
     author_email="billy.olsen@gmail.com",
     description=("A wrapper for rmadison including basic support for "
