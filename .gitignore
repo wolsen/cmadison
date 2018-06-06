@@ -61,3 +61,7 @@ target/
 
 # Snappy stuff
 *.snap
+
+# PyCharm stuff
+.idea/
+

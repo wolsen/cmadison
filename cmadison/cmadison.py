@@ -16,17 +16,19 @@ from lxml import etree
 import argparse
 import gzip
 import logging as log
+import os
 import os.path
+import requests
+import requests_cache
 import shutil
 import subprocess
-import sys
 import tempfile
+
 try:
     # python2
-    from urllib2 import urlopen, HTTPError
+    from urllib2 import HTTPError
 except ImportError:
     # python3
-    from urllib.request import urlopen
     from urllib.error import HTTPError
 
 
@@ -35,6 +37,9 @@ UCA_DEB_REPO_URL = "http://ubuntu-cloud.archive.canonical.com/ubuntu/dists"
 
 # Which releases are no longer supported
 UNSUPPORTED_RELEASES = ['folsom', 'grizzly', 'havana']
+
+# The directory containing cache data content
+CACHE_DIR = os.path.expanduser('~/.cmadison')
 
 # This is where the Sources.gz files will be downloaded to.
 # In the future, it'd be better to have these cached and know - but
@@ -53,8 +58,10 @@ def get_files_in_remote_url(relative_path=""):
     :return: list of files or folders found in the remote url.
     """
     url = "%s/%s" % (UCA_DEB_REPO_URL, relative_path)
-    content = urlopen(url)
-    root = etree.parse(content, etree.HTMLParser())
+    resp = requests.get(url)
+    resp.raise_for_status()
+
+    root = etree.fromstring(resp.text, etree.HTMLParser())
 
     # Content available here should be directory listing, which is presented
     # as a table, with each file in its own row. Use xpath expression to find
@@ -120,18 +127,21 @@ class Sources(object):
         """
         Downloads the file to parse Source information from.
         """
-        url = ("%(base_url)s/%(dist)s/%(os_release)s/main/source/Sources.gz" %
-               {'base_url': UCA_DEB_REPO_URL,
-                'dist': self.dist,
-                'os_release': self.os_release})
+        url = ("{base_url}/{dist}/{os_release}/main/source/"
+               "Sources.gz").format(base_url=UCA_DEB_REPO_URL, dist=self.dist,
+                                    os_release=self.os_release)
 
         try:
-            content = urlopen(url)
-            with open(self.fname, 'wb+') as f:
-                f.write(content.read())
+            resp = requests.get(url)
+            resp.raise_for_status()
+            with open(self.fname, 'wb+') as fd:
+                for chunk in resp.iter_content(chunk_size=128):
+                    fd.write(chunk)
             return True
         except HTTPError:
-            log.info("Could not download source for %(dist)s/%(os_release)s" % {'dist': self.dist, 'os_release': self.os_release})
+            log.error("Could not download source for {dist}/"
+                      "{os_release}".format(dist=self.dist,
+                                            os_release=self.os_release))
             return False
 
     def get_sources(self):
@@ -250,7 +260,6 @@ def do_cloudarchive_search(package, print_source=False):
         for os_release in os_releases:
             for src in Sources(dist, os_release).get_sources():
                 for pkg in package:
-                    mtype = ''
                     if src.package == pkg:
                         mtype = 'source'
                     elif pkg in src.binaries:
@@ -262,16 +271,29 @@ def do_cloudarchive_search(package, print_source=False):
                     rname = os_release
                     if dist.find('-proposed') > 0:
                         rname = '%s-proposed' % os_release
-                    match = [pkg,
-                             src.version,
-                             rname,
-                             mtype]
-                    matches.append(match)
+
+                    matches.append([pkg, src.version, rname, mtype])
 
     if print_source:
         print("cloud-archive:")
 
     print_table(sorted(matches, key=lambda row: row[0] + row[2]))
+
+
+def clear_cache():
+    """Removes the cache data"""
+    shutil.rmtree(CACHE_DIR)
+
+
+def setup_cache():
+    """Sets up the local cache repository and ensures that the requests_cache
+    monkey patching is injected in order to ensure the remote requests use
+    the cmadison cache data.
+    """
+    if not os.path.exists(CACHE_DIR):
+        os.makedirs(CACHE_DIR)
+
+    requests_cache.install_cache(os.path.join(CACHE_DIR, 'cmadison'))
 
 
 def main():
@@ -289,12 +311,25 @@ def main():
                               'URLs. For cmadison, cloud-archive is the '
                               'default value. Any additional values are '
                               'passed on to rmadison'))
+    parser.add_argument('--clear-cache', default=False, dest='clear_cache',
+                        action='store_true',
+                        help=('Remove cache data prior to searching. All '
+                              'cache data will be removed'))
+    parser.add_argument('--no-cache', default=False, dest='no_cache',
+                        action='store_true',
+                        help='Do not used cached data')
     parser.add_argument('package', nargs='+')
 
     try:
         args = parser.parse_args()
         sources = args.urls.split(',')
         print_prefix = len(sources) > 1
+
+        if args.clear_cache:
+            clear_cache()
+
+        if not args.no_cache:
+            setup_cache()
 
         if 'cloud-archive' in sources:
             do_cloudarchive_search(args.package, print_prefix)
@@ -305,6 +340,7 @@ def main():
             do_rmadison_search(args.package, sources, print_prefix)
     finally:
         shutil.rmtree(working_dir)
+
 
 if __name__ == '__main__':
     main()
