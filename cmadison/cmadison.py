@@ -36,7 +36,8 @@ except ImportError:
 UCA_DEB_REPO_URL = "http://ubuntu-cloud.archive.canonical.com/ubuntu/dists"
 
 # Which releases are no longer supported
-UNSUPPORTED_RELEASES = ['folsom', 'grizzly', 'havana']
+UNSUPPORTED_RELEASES = ['folsom', 'grizzly', 'havana', 'icehouse', 'juno',
+                        'kilo', 'liberty', 'newton']
 
 # The directory containing cache data content
 CACHE_DIR = os.path.expanduser('~/.cmadison')
@@ -91,7 +92,7 @@ def get_available_dists():
     return dists
 
 
-def get_openstack_releases(dist):
+def get_openstack_releases(dist, show_eol=False):
     """
     Returns a list of available OpenStack releases for the specified
     distribution.
@@ -100,7 +101,8 @@ def get_openstack_releases(dist):
     """
     os_releases = get_files_in_remote_url(dist)
     log.debug("Found OpenStack releases for dist %s: %s", dist, os_releases)
-    os_releases = [x for x in os_releases if x not in UNSUPPORTED_RELEASES]
+    if not show_eol:
+        os_releases = [x for x in os_releases if x not in UNSUPPORTED_RELEASES]
 
     return os_releases
 
@@ -244,7 +246,7 @@ def do_rmadison_search(search_for, urls=None, print_source=False):
         log.error("Error querying rmadison: %s", str(e))
 
 
-def do_cloudarchive_search(package, print_source=False):
+def do_cloudarchive_search(package, print_source=False, show_eol=False):
     """
     Runs the search for packages in the cloud archive.
     """
@@ -252,10 +254,11 @@ def do_cloudarchive_search(package, print_source=False):
 
     mapping = {}
     for d in dists:
-        os_releases = get_openstack_releases(d)
+        os_releases = get_openstack_releases(d, show_eol)
         mapping[d] = os_releases
 
     matches = []
+    eol_matches = []
     for dist, os_releases in mapping.items():
         for os_release in os_releases:
             for src in Sources(dist, os_release).get_sources():
@@ -272,12 +275,22 @@ def do_cloudarchive_search(package, print_source=False):
                     if dist.find('-proposed') > 0:
                         rname = '%s-proposed' % os_release
 
-                    matches.append([pkg, src.version, rname, mtype])
+                    if show_eol and os_release in UNSUPPORTED_RELEASES:
+                        eol_matches.append([pkg, src.version, rname, mtype])
+                    else:
+                        matches.append([pkg, src.version, rname, mtype])
 
     if print_source:
         print("cloud-archive:")
 
-    print_table(sorted(matches, key=lambda row: row[0] + row[2]))
+    if eol_matches:
+        print("-- Unsupported Releases --")
+        print_table(sorted(eol_matches, key=lambda row: row[0] + row[2]))
+
+    if matches:
+        if eol_matches:
+            print("-- Supported Releases --")
+        print_table(sorted(matches, key=lambda row: row[0] + row[2]))
 
 
 def clear_cache():
@@ -318,6 +331,9 @@ def main():
     parser.add_argument('--no-cache', default=False, dest='no_cache',
                         action='store_true',
                         help='Do not used cached data')
+    parser.add_argument('--eol', default=False, dest='eol',
+                        action='store_true',
+                        help=('Show releases which have reached end of life'))
     parser.add_argument('package', nargs='+')
 
     try:
@@ -332,7 +348,7 @@ def main():
             setup_cache()
 
         if 'cloud-archive' in sources:
-            do_cloudarchive_search(args.package, print_prefix)
+            do_cloudarchive_search(args.package, print_prefix, args.eol)
             sources.remove('cloud-archive')
 
         if len(sources) >= 1:
