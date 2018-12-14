@@ -13,6 +13,7 @@
 from __future__ import print_function
 
 from lxml import etree
+from requests.exceptions import HTTPError
 import argparse
 import gzip
 import logging as log
@@ -23,13 +24,6 @@ import requests_cache
 import shutil
 import subprocess
 import tempfile
-
-try:
-    # python2
-    from urllib2 import HTTPError
-except ImportError:
-    # python3
-    from urllib.error import HTTPError
 
 
 # Defines teh default ubuntu cloud-archive repository URL.
