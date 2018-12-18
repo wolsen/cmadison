@@ -21,20 +21,46 @@ import os
 import os.path
 import requests
 import requests_cache
+import six
 import shutil
-import subprocess
 import tempfile
 
 
-# Defines teh default ubuntu cloud-archive repository URL.
+# Defines the default ubuntu cloud-archive repository URL.
 UCA_DEB_REPO_URL = "http://ubuntu-cloud.archive.canonical.com/ubuntu/dists"
 
+# URLs used in rmadison queries
+RMADISON_URL_MAP = {
+    'debian': "https://api.ftp-master.debian.org/madison",
+    'new': "https://api.ftp-master.debian.org/madison?s=new",
+    'qa': "https://qa.debian.org/madison.php",
+    'ubuntu': "http://people.canonical.com/~ubuntu-archive/madison.cgi",
+    'udd': 'https://qa.debian.org/cgi-bin/madison.cgi',
+}
+
 # Which releases are no longer supported
-UNSUPPORTED_RELEASES = ['folsom', 'grizzly', 'havana', 'icehouse', 'juno',
-                        'kilo', 'liberty', 'newton']
+UNSUPPORTED_RELEASES = [
+    'folsom',
+    'grizzly',
+    'havana',
+    'icehouse',
+    'juno',
+    'kilo',
+    'liberty',
+    'newton'
+]
+
+# Contains a mapping of dist pockets to list of release pockets to ignore
+IGNORE_RELEASES = {
+    'precise-updates': ['stein'],
+    'precise-proposed': ['stein'],
+}
 
 # The directory containing cache data content
-CACHE_DIR = os.path.expanduser('~/.cmadison')
+if 'SNAP_USER_DATA' in os.environ:
+    CACHE_DIR = os.environ.get('SNAP_USER_DATA')
+else:
+    CACHE_DIR = os.path.expanduser('~/.cmadison')
 
 # This is where the Sources.gz files will be downloaded to.
 # In the future, it'd be better to have these cached and know - but
@@ -225,19 +251,45 @@ def print_table(table):
 
 def do_rmadison_search(search_for, urls=None, print_source=False):
     """
-    Runs the earch for the packages using rmadison.
+    rmadison simply queries a set of URLs with parameters of package name
+    and asks for text output. Just run the same query that rmadison does
+    and spit out the output.
     """
-    try:
-        cmd = ['rmadison']
-        if urls and isinstance(urls, list):
-            cmd.extend(['-u', ','.join(urls)])
-        cmd.extend(search_for)
-        output = subprocess.check_output(cmd)
-        if print_source and urls:
-            print('%s:' % urls[0])
-        print(output)
-    except Exception as e:
-        log.error("Error querying rmadison: %s", str(e))
+    if not urls:
+        return
+
+    if isinstance(urls, six.string_types):
+        urls = [urls]
+
+    for url in urls:
+        try:
+            base_url = RMADISON_URL_MAP.get(url, None)
+            if not base_url:
+                log.error("Unknown source %s", url)
+                continue
+            params = {
+                'package': search_for,
+                'text': 'on',
+            }
+            resp = requests.get(base_url, params=params)
+            resp.raise_for_status()
+            print('%s:' % url)
+            print(resp.text)
+        except HTTPError as e:
+            log.error("Error querying url %s: %s", url, str(e))
+
+
+def ignore_source(dist, release):
+    """
+    Returns true if the source should be ignored
+    :param dist: the base OS distribution (e.g. xenial, trusty, etc)
+    :param release: the openstack release version (e.g. mitaka, newton, etc)
+    :return: True if the source should be ignored, False otherwise
+    """
+    ignore = IGNORE_RELEASES.get(dist, None)
+    if not ignore:
+        return False
+    return release in ignore
 
 
 def do_cloudarchive_search(package, print_source=False, show_eol=False):
@@ -255,6 +307,10 @@ def do_cloudarchive_search(package, print_source=False, show_eol=False):
     eol_matches = []
     for dist, os_releases in mapping.items():
         for os_release in os_releases:
+            # Ignore some dist/os_release combinations
+            if ignore_source(dist, os_release):
+                continue
+
             for src in Sources(dist, os_release).get_sources():
                 for pkg in package:
                     if src.package == pkg:
@@ -285,6 +341,9 @@ def do_cloudarchive_search(package, print_source=False, show_eol=False):
         if eol_matches:
             print("-- Supported Releases --")
         print_table(sorted(matches, key=lambda row: row[0] + row[2]))
+
+    # Put a blank line after the table to separate from others
+    print()
 
 
 def clear_cache():
