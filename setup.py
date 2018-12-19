@@ -18,6 +18,12 @@ def get_version():
     return check_output(['git', 'describe', '--tags']).decode('utf-8')
 
 
+def get_long_description():
+    with open('README.md', 'r') as f:
+        text = f.read()
+    return text
+
+
 setup(
     name="cmadison",
     version=get_version(),
@@ -25,6 +31,8 @@ setup(
     author_email="billy.olsen@gmail.com",
     description=("A wrapper for rmadison including basic support for "
                  "Ubuntu Cloud Archive"),
+    long_description=get_long_description(),
+    long_description_content_type='text/markdown',
     install_requires=get_dependencies(),
     packages=find_packages(),
     url='http://github.com/wolsen/cmadison',
@@ -34,7 +42,7 @@ setup(
             ]
         },
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)"
     ]

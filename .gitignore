@@ -61,6 +61,10 @@ target/
 
 # Snappy stuff
 *.snap
+snap/
+stage/
+parts/
+prime/
 
 # PyCharm stuff
 .idea/
