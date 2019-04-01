@@ -326,9 +326,11 @@ def do_cloudarchive_search(package, print_source=False, show_eol=False):
                         rname = '%s-proposed' % os_release
 
                     if show_eol and os_release in UNSUPPORTED_RELEASES:
-                        eol_matches.append([pkg, src.version, rname, mtype])
+                        eol_matches.append([pkg, src.version, rname,
+                                            dist, mtype])
                     else:
-                        matches.append([pkg, src.version, rname, mtype])
+                        matches.append([pkg, src.version, rname,
+                                        dist, mtype])
 
     if print_source:
         print("cloud-archive:")
