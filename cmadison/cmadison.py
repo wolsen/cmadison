@@ -353,7 +353,7 @@ def clear_cache():
     shutil.rmtree(CACHE_DIR)
 
 
-def setup_cache():
+def setup_cache(cache_period):
     """Sets up the local cache repository and ensures that the requests_cache
     monkey patching is injected in order to ensure the remote requests use
     the cmadison cache data.
@@ -361,7 +361,8 @@ def setup_cache():
     if not os.path.exists(CACHE_DIR):
         os.makedirs(CACHE_DIR)
 
-    requests_cache.install_cache(os.path.join(CACHE_DIR, 'cmadison'))
+    requests_cache.install_cache(os.path.join(CACHE_DIR, 'cmadison'),
+                                 expire_after=cache_period*60)
 
 
 def main():
@@ -386,6 +387,9 @@ def main():
     parser.add_argument('--no-cache', default=False, dest='no_cache',
                         action='store_true',
                         help='Do not used cached data')
+    parser.add_argument('--cache-period', default=24*60, dest='cache_period',
+                        type=int,
+                        help='Time in minutes to cache data (default: 24h)')
     parser.add_argument('--eol', default=False, dest='eol',
                         action='store_true',
                         help=('Show releases which have reached end of life'))
@@ -400,7 +404,7 @@ def main():
             clear_cache()
 
         if not args.no_cache:
-            setup_cache()
+            setup_cache(args.cache_period)
 
         if 'cloud-archive' in sources:
             do_cloudarchive_search(args.package, print_prefix, args.eol)
