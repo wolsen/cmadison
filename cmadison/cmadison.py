@@ -22,7 +22,6 @@ import os.path
 import requests
 import requests_cache
 import six
-import shutil
 import tempfile
 
 
@@ -350,7 +349,9 @@ def do_cloudarchive_search(package, print_source=False, show_eol=False):
 
 def clear_cache():
     """Removes the cache data"""
-    shutil.rmtree(CACHE_DIR)
+    cache_file = '{cache_dir}/cmadison.sqlite'.format(cache_dir=CACHE_DIR)
+    if os.path.exists(cache_file):
+        os.remove(cache_file)
 
 
 def setup_cache(cache_period):
