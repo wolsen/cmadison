@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Provides a rather basic version of rmadison (or dak ls if you prefer)
 # for the Ubuntu cloud-archive.
@@ -9,8 +9,6 @@
 #  2) It will show similar output for the selected package in the ubuntu
 #     cloud archives.
 #
-
-from __future__ import print_function
 
 from lxml import etree
 from requests.exceptions import HTTPError
