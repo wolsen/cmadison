@@ -47,7 +47,10 @@ UNSUPPORTED_RELEASES = [
     'juno',
     'kilo',
     'liberty',
-    'newton'
+    'newton', # EOL Apr 2018
+    'ocata', # EOL Feb 2020
+    'pike', # EOL Feb 2019
+    'rocky' # EOL Feb 2020
 ]
 
 # Contains a mapping of dist pockets to list of release pockets to ignore
