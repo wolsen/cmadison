@@ -19,6 +19,7 @@ import os
 import os.path
 import requests
 import requests_cache
+import shutil
 import six
 import tempfile
 

@@ -21,8 +21,6 @@ parts:
   cmadison:
     plugin: python
     source: .
-    stage-packages:
-    - libc6
     requirements:
     - requirements.txt
 
