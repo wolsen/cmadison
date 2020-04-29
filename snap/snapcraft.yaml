@@ -1,6 +1,5 @@
 name: cmadison
 version: git
-version-script: git describe --tags
 summary: Tool providing rmadison type capabilities for the Ubuntu Cloud Archive
 description: |
   rmadison is a great tool for showing which versions are available in the
@@ -10,6 +9,7 @@ description: |
 
 grade: stable
 confinement: strict
+base: core18
 
 apps:
   cmadison:
@@ -23,5 +23,6 @@ parts:
     source: .
     stage-packages:
     - libc6
-    requirements: requirements.txt
+    requirements:
+    - requirements.txt
 
