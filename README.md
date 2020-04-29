@@ -1,5 +1,7 @@
 cmadison
 ========
+[![Build Status](https://travis-ci.org/wolsen/cmadison.svg?branch=master)](https://travis-ci.org/wolsen/cmadison)
+
 Because I couldn't come up with a better name, its called cmadison... cmadison provides a wrapper
 around rmadison which includes information regarding the packages in the Ubuntu cloud-archive in
 addition to the traditional sources (e.g. debian, ubuntu, etc).
