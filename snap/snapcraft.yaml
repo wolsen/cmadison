@@ -9,7 +9,7 @@ description: |
 
 grade: stable
 confinement: strict
-base: core18
+base: core22
 
 apps:
   cmadison:
@@ -21,6 +21,5 @@ parts:
   cmadison:
     plugin: python
     source: .
-    requirements:
+    python-requirements:
     - requirements.txt
-
